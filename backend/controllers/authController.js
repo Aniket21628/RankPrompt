@@ -1,0 +1,294 @@
+import User from '../models/User.js';
+import { generateToken } from '../utils/jwt.js';
+import { OAuth2Client } from 'google-auth-library';
+
+// @desc    Register user with email and password
+// @route   POST /api/auth/register
+// @access  Public
+export const register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Validate input
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields',
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already exists with this email',
+      });
+    }
+
+    // Create user
+    const user = await User.create({
+      name,
+      email,
+      password,
+      authProvider: 'local',
+    });
+
+    // Send token response
+    sendTokenResponse(user, 201, res);
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error registering user',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Login user with email and password
+// @route   POST /api/auth/login
+// @access  Public
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide email and password',
+      });
+    }
+
+    // Find user and include password field
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Check if user registered with OAuth
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({
+        success: false,
+        message: `This account is registered with ${user.authProvider}. Please use ${user.authProvider} to login.`,
+      });
+    }
+
+    // Check password
+    const isPasswordMatch = await user.comparePassword(password);
+
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials',
+      });
+    }
+
+    // Update last login
+    user.lastLogin = Date.now();
+    await user.save();
+
+    // Send token response
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error logging in',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Google OAuth login/register
+// @route   POST /api/auth/google
+// @access  Public
+export const googleAuth = async (req, res) => {
+  try {
+    const { credential } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google credential is required',
+      });
+    }
+
+    // Initialize Google OAuth2 client
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email not provided by Google',
+      });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // User exists - update last login
+      user.lastLogin = Date.now();
+      await user.save();
+    } else {
+      // Create new user
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        authProvider: 'google',
+        googleId,
+        avatar: picture,
+        isEmailVerified: true,
+      });
+    }
+
+    // Send token response
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error with Google authentication',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get current logged in user
+// @route   GET /api/auth/me
+// @access  Private
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching user',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Logout user / clear cookie
+// @route   POST /api/auth/logout
+// @access  Private
+export const logout = async (req, res) => {
+  try {
+    res.cookie('token', 'none', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'User logged out successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error logging out',
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Update user password
+// @route   PUT /api/auth/updatepassword
+// @access  Private
+export const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide current and new password',
+      });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+
+    // Check if user uses OAuth
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot update password for OAuth users',
+      });
+    }
+
+    // Check current password
+    const isMatch = await user.comparePassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect',
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error updating password',
+      error: error.message,
+    });
+  }
+};
+
+// Helper function to get token from model, create cookie and send response
+const sendTokenResponse = (user, statusCode, res) => {
+  // Create token
+  const token = generateToken(user._id);
+
+  const options = {
+    expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  };
+
+  res.status(statusCode).cookie('token', token, options).json({
+    success: true,
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      authProvider: user.authProvider,
+    },
+  });
+};
+
+export default {
+  register,
+  login,
+  googleAuth,
+  getMe,
+  logout,
+  updatePassword,
+};
