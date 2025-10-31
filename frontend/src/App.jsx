@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Reports from './pages/Reports';
 import Profile from './pages/Profile';
 import EarnCredits from './pages/EarnCredits';
+import BuyCredits from './pages/BuyCredits';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -50,6 +51,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <EarnCredits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/buy-credits"
+              element={
+                <ProtectedRoute>
+                  <BuyCredits />
                 </ProtectedRoute>
               }
             />
