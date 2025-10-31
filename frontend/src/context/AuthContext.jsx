@@ -67,10 +67,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleLogin = async (credential) => {
+  const googleLogin = async (credential, referralCode = null) => {
     try {
       setError(null);
-      const data = await authAPI.googleLogin(credential);
+      const data = await authAPI.googleLogin(credential, referralCode);
       setUser(data.user);
       return { success: true };
     } catch (err) {

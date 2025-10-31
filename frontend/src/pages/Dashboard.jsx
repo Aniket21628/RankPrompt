@@ -1,48 +1,13 @@
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { LogOut, Zap, TrendingUp, BarChart3, Users } from 'lucide-react';
+import { TrendingUp, BarChart3, Users, Zap } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="min-h-screen gradient-bg">
-      {/* Navbar */}
-      <nav className="glass-effect border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl blur-lg opacity-50"></div>
-                <div className="relative bg-gradient-to-r from-primary-500 to-accent-500 p-2.5 rounded-xl">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <span className="text-2xl font-bold gradient-text">RankPrompt</span>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Welcome, {user?.name}</span>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 glass-light px-4 py-2 rounded-lg hover:bg-white/10 text-gray-300 hover:text-white transition-all"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="flex min-h-screen gradient-bg">
+      <Sidebar />
+      
       {/* Dashboard Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex-1 ml-64 p-8">
         <div className="mb-8">
           <h1 className="text-4xl font-black text-white mb-2">Dashboard</h1>
           <p className="text-gray-400">Track your AI search rankings and visibility</p>

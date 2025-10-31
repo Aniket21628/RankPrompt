@@ -58,14 +58,19 @@ export const authAPI = {
   },
 
   // Google OAuth login
-  googleLogin: async (credential) => {
+  googleLogin: async (credential, referralCode = null) => {
+    const body = { credential };
+    if (referralCode) {
+      body.referralCode = referralCode;
+    }
+    
     const response = await fetch(`${API_URL}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify(body),
     });
     return handleResponse(response);
   },

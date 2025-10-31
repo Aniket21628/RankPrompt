@@ -31,7 +31,7 @@ const Login = () => {
     const result = await login(formData);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/reports/new');
     } else {
       setError(result.error);
     }
@@ -45,7 +45,7 @@ const Login = () => {
     const result = await googleLogin(credentialResponse.credential);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/reports/new');
     } else {
       setError(result.error || 'Google login failed');
     }

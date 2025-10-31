@@ -30,6 +30,38 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // Allow null values
   },
+  credits: {
+    type: Number,
+    default: 0,
+  },
+  currentPlanPeriodEnd: {
+    type: Date,
+    default: null,
+  },
+  // Referral System
+  referralCode: {
+    type: String,
+    unique: true,
+    sparse: true, // Allow null/undefined values, only enforce uniqueness on existing values
+  },
+  referredBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  referralCount: {
+    type: Number,
+    default: 0,
+  },
+  // Survey
+  surveyCompleted: {
+    type: Boolean,
+    default: false,
+  },
+  surveyCompletedAt: {
+    type: Date,
+    default: null,
+  },
   avatar: {
     type: String,
     default: null,
@@ -57,8 +89,25 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// Hash password before saving
+// Generate referral code and hash password before saving
 userSchema.pre('save', async function (next) {
+  // Generate referral code only for NEW users without one
+  if (this.isNew && !this.referralCode) {
+    const crypto = await import('crypto');
+    let isUnique = false;
+    let code;
+    
+    while (!isUnique) {
+      code = crypto.randomBytes(4).toString('hex').toUpperCase();
+      const existing = await mongoose.models.User.findOne({ referralCode: code });
+      if (!existing) {
+        isUnique = true;
+      }
+    }
+    
+    this.referralCode = code;
+  }
+
   // Only hash if password is modified or new
   if (!this.isModified('password')) {
     return next();

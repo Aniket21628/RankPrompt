@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, User, Zap, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Zap, Eye, EyeOff, ArrowRight, Gift } from 'lucide-react';
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { register, googleLogin } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -16,6 +17,15 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+
+  useEffect(() => {
+    // Get referral code from URL
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
@@ -44,10 +54,16 @@ const Register = () => {
     }
 
     const { confirmPassword, ...registerData } = formData;
-    const result = await register(registerData);
+    
+    // Include referral code if present
+    const dataToSend = referralCode 
+      ? { ...registerData, referralCode }
+      : registerData;
+    
+    const result = await register(dataToSend);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/reports/new');
     } else {
       setError(result.error);
     }
@@ -58,10 +74,11 @@ const Register = () => {
     setLoading(true);
     setError('');
 
-    const result = await googleLogin(credentialResponse.credential);
+    // Include referral code in Google signup
+    const result = await googleLogin(credentialResponse.credential, referralCode);
 
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/reports/new');
     } else {
       setError(result.error || 'Google sign up failed');
     }
@@ -199,6 +216,31 @@ const Register = () => {
                   placeholder="••••••••"
                 />
               </div>
+            </div>
+
+            {/* Referral Code Field (Optional) */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Referral Code <span className="text-gray-500 text-xs font-normal">(Optional)</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Gift className="w-5 h-5 text-gray-500" />
+                </div>
+                <input
+                  type="text"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  className="w-full pl-12 pr-4 py-3 glass-light rounded-xl border border-white/10 focus:border-primary-500/50 focus:outline-none focus:ring-2 focus:ring-primary-500/20 text-white placeholder-gray-500 transition-all uppercase"
+                  placeholder="Enter referral code"
+                  maxLength={8}
+                />
+              </div>
+              {referralCode && (
+                <p className="mt-2 text-xs text-primary-400">
+                  🎁 You'll earn bonus credits when you sign up with this referral code!
+                </p>
+              )}
             </div>
 
             {/* Terms */}

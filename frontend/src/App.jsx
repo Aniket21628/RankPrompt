@@ -6,6 +6,9 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import Profile from './pages/Profile';
+import EarnCredits from './pages/EarnCredits';
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -20,9 +23,33 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route
               path="/dashboard"
+              element={<Navigate to="/reports/new" replace />}
+            />
+            <Route
+              path="/reports"
+              element={<Navigate to="/reports/new" replace />}
+            />
+            <Route
+              path="/reports/new"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/earn-credits"
+              element={
+                <ProtectedRoute>
+                  <EarnCredits />
                 </ProtectedRoute>
               }
             />

@@ -7,6 +7,8 @@ import rateLimit from 'express-rate-limit';
 import connectDB from './config/database.js';
 import { initSupabase } from './config/supabase.js';
 import authRoutes from './routes/authRoutes.js';
+import brandRoutes from './routes/brandRoutes.js';
+import creditRoutes from './routes/creditRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +52,8 @@ app.use(cookieParser());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/brand', brandRoutes);
+app.use('/api/credits', creditRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
