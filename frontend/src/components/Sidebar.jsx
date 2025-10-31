@@ -26,7 +26,6 @@ const Sidebar = () => {
       path: '/reports/new', 
       icon: Plus, 
       gradient: 'from-purple-500 to-pink-500',
-      border: true 
     },
     { 
       name: 'Get Started', 
