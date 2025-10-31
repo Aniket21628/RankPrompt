@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, Globe, X } from 'lucide-react';
+import { Search, Globe, X, Check } from 'lucide-react';
+import Step2BrandAnalysis from '../components/Step2BrandAnalysis';
+import Step3ReadyToAnalyze from '../components/Step3ReadyToAnalyze';
 
 const Reports = () => {
   const [formData, setFormData] = useState({
@@ -18,9 +20,11 @@ const Reports = () => {
     brandFavicon: null
   });
 
+  const [currentStep, setCurrentStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showBrandModal, setShowBrandModal] = useState(false);
   const [existingBrand, setExistingBrand] = useState(null);
+  const [step2Data, setStep2Data] = useState(null);
 
   const countries = [
     { code: 'IN', name: 'India' },
@@ -129,25 +133,59 @@ const Reports = () => {
     const favicon = await fetchFavicon(formData.websiteUrl);
     setFormData(prev => ({ ...prev, brandFavicon: favicon }));
 
-    // Simulate checking if brand exists (you'll replace this with actual API call)
-    setTimeout(() => {
-      // For demo: show modal if brand name is not empty
-      if (formData.brandName) {
-        setExistingBrand({
-          name: formData.brandName,
-          website: formData.websiteUrl,
-          favicon: favicon
-        });
-        setShowBrandModal(true);
-      }
-      setIsAnalyzing(false);
-    }, 2000);
+    // Move to step 2
+    setIsAnalyzing(false);
+    setCurrentStep(2);
+  };
 
-    // Here you'll integrate with your n8n agent
-    console.log('Analyzing brand with data:', {
-      ...formData,
-      favicon
+  const handleStep2Complete = (data) => {
+    setStep2Data(data);
+    setCurrentStep(3);
+  };
+
+  const handleAnalyzeVisibility = (finalPrompts) => {
+    // This will be integrated with your n8n agent
+    const completeData = {
+      brandData: formData,
+      step2Data,
+      step3Data: {
+        prompts: finalPrompts,
+        totalPrompts: finalPrompts.length,
+        categories: [...new Set(finalPrompts.map(p => p.category))],
+        timestamp: new Date().toISOString(),
+      }
+    };
+    
+    console.log('✅ Complete data for n8n agent:', completeData);
+    
+    alert(`Ready to analyze ${finalPrompts.length} prompts!\n\nData structure:\n- Brand: ${formData.brandName}\n- Prompts: ${finalPrompts.length}\n- Categories: ${completeData.step3Data.categories.length}\n\nCheck console for full data object.`);
+    
+    // TODO: Send completeData to your n8n agent
+    // Example:
+    // await fetch('YOUR_N8N_WEBHOOK_URL', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(completeData)
+    // });
+  };
+
+  const handleStartOver = () => {
+    setCurrentStep(1);
+    setFormData({
+      brandName: '',
+      websiteUrl: '',
+      searchScope: 'local',
+      localSearchCity: 'Delhi, IN',
+      targetCountry: 'IN',
+      language: 'English',
+      platforms: {
+        perplexity: false,
+        chatgpt: false,
+        googleAiOverviews: false
+      },
+      brandFavicon: null
     });
+    setStep2Data(null);
   };
 
   return (
@@ -155,9 +193,9 @@ const Reports = () => {
       <Sidebar />
       
       <div className="flex-1 ml-64 p-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-black text-white mb-4">
               Check Your Client's Visibility
             </h1>
@@ -169,7 +207,75 @@ const Reports = () => {
             </p>
           </div>
 
-          {/* Form */}
+          {/* Step Indicators */}
+          <div className="flex items-center justify-center mb-12">
+            <div className="flex items-center space-x-4">
+              {/* Step 1 */}
+              <div className="flex items-center">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                  currentStep === 1 
+                    ? 'bg-primary-500 border-primary-500 text-white'
+                    : currentStep > 1
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : 'border-gray-600 text-gray-600'
+                }`}>
+                  {currentStep > 1 ? <Check className="w-5 h-5" /> : '1'}
+                </div>
+                <span className={`ml-2 text-sm font-medium ${
+                  currentStep >= 1 ? 'text-white' : 'text-gray-600'
+                }`}>
+                  Brand Details
+                </span>
+              </div>
+
+              {/* Connector */}
+              <div className={`w-16 h-0.5 ${
+                currentStep > 1 ? 'bg-green-500' : 'bg-gray-600'
+              }`}></div>
+
+              {/* Step 2 */}
+              <div className="flex items-center">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                  currentStep === 2 
+                    ? 'bg-primary-500 border-primary-500 text-white'
+                    : currentStep > 2
+                    ? 'bg-green-500 border-green-500 text-white'
+                    : 'border-gray-600 text-gray-600'
+                }`}>
+                  {currentStep > 2 ? <Check className="w-5 h-5" /> : '2'}
+                </div>
+                <span className={`ml-2 text-sm font-medium ${
+                  currentStep >= 2 ? 'text-white' : 'text-gray-600'
+                }`}>
+                  Generate Prompts
+                </span>
+              </div>
+
+              {/* Connector */}
+              <div className={`w-16 h-0.5 ${
+                currentStep > 2 ? 'bg-green-500' : 'bg-gray-600'
+              }`}></div>
+
+              {/* Step 3 */}
+              <div className="flex items-center">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
+                  currentStep === 3 
+                    ? 'bg-primary-500 border-primary-500 text-white'
+                    : 'border-gray-600 text-gray-600'
+                }`}>
+                  3
+                </div>
+                <span className={`ml-2 text-sm font-medium ${
+                  currentStep >= 3 ? 'text-white' : 'text-gray-600'
+                }`}>
+                  Test Visibility
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Step 1: Brand Details Form */}
+          {currentStep === 1 && (
           <div className="glass-effect rounded-2xl p-8 border border-white/10">
             <div className="space-y-6">
               {/* Brand Name */}
@@ -420,6 +526,27 @@ const Reports = () => {
               </button>
             </div>
           </div>
+          )}
+
+          {/* Step 2: Brand Analysis & Category Selection */}
+          {currentStep === 2 && (
+            <Step2BrandAnalysis
+              brandData={formData}
+              onComplete={handleStep2Complete}
+              onBack={() => setCurrentStep(1)}
+            />
+          )}
+
+          {/* Step 3: Ready to Analyze Visibility */}
+          {currentStep === 3 && step2Data && (
+            <Step3ReadyToAnalyze
+              brandData={formData}
+              step2Data={step2Data}
+              onAnalyze={handleAnalyzeVisibility}
+              onBack={() => setCurrentStep(2)}
+              onStartOver={handleStartOver}
+            />
+          )}
         </div>
       </div>
 

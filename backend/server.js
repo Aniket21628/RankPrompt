@@ -9,6 +9,7 @@ import { initSupabase } from './config/supabase.js';
 import authRoutes from './routes/authRoutes.js';
 import brandRoutes from './routes/brandRoutes.js';
 import creditRoutes from './routes/creditRoutes.js';
+import openaiRoutes from './routes/openaiRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -54,6 +55,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/brand', brandRoutes);
 app.use('/api/credits', creditRoutes);
+app.use('/api/openai', openaiRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
