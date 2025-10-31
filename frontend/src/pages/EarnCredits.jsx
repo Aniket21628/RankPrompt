@@ -176,7 +176,7 @@ const EarnCredits = () => {
                 {/* Your Referrals */}
                 <div className="glass-light rounded-xl p-4">
                   <p className="text-gray-400 text-sm">
-                    {referralData.referralCount > 0
+                    {referralData.referralCount === 0
                       ? `No referrals yet. Share your code to start earning credits!`
                       : `You've referred ${referralData.referralCount} ${referralData.referralCount === 1 ? 'person' : 'people'}!`}
                   </p>

@@ -345,6 +345,7 @@ const sendTokenResponse = (user, statusCode, res) => {
       email: user.email,
       avatar: user.avatar,
       authProvider: user.authProvider,
+      credits: user.credits,
     },
   });
 };

@@ -178,10 +178,14 @@ const Sidebar = () => {
               <Zap className="w-4 h-4 text-primary-500" />
               <span className="text-gray-300 text-sm">Credits</span>
             </div>
-            <span className="text-white font-semibold text-sm">0 available</span>
+            <span className="text-white font-semibold text-sm">
+              {user?.credits || 0} available
+            </span>
           </div>
           
-          <p className="text-gray-500 text-xs mb-3">0 of 0 used</p>
+          <p className="text-gray-500 text-xs mb-3">
+            {user?.credits || 0} total credits
+          </p>
           
           <button
             onClick={logout}
